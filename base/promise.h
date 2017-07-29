@@ -12,6 +12,8 @@
 #include <QTimer>
 #include <functional>
 
+#define new new(_NORMAL_BLOCK, __FILE__, __LINE__)
+
 namespace q {
 
 template <typename T>
@@ -19,6 +21,8 @@ class Promise;
 
 template <typename T>
 class Deferred;
+
+using promise = Promise<QVariant>;
 
 class PromiseError {
 public:
@@ -697,9 +701,8 @@ public:
                 >(std::move(functor));
     }
 
-    Promise<T> switchContext(QObject* context) {
-        m_sharedContext->setContextObject(context);
-        return Promise<T>(m_sharedContext, m_deferObject);
+    Promise<T> switchContext(QObject* context = nullptr) {
+        return Promise<T>(QSharedPointer<Private::SharedContext>::create(context), m_deferObject);
     }
 
     // TODO: With a promise
@@ -1218,6 +1221,7 @@ makeConnectionPromise(Emitter emitter, Member pointerToMemberFunction) {
     auto conn = QObject::connect(emitter, pointerToMemberFunction, [=]() {
         deferPtr->resolve();
     });
+
     QObject::connect(emitter, pointerToMemberFunction, [=]() {
         QObject::disconnect(conn);
     });
